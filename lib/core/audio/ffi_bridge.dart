@@ -4,6 +4,8 @@ import 'dart:io';
 import 'dart:isolate';
 import 'dart:typed_data';
 
+import 'package:ffi/ffi.dart';
+
 import '../dsp/pitch_result.dart';
 
 // ── Native struct layout ─────────────────────────────────────────────────────
@@ -49,11 +51,6 @@ typedef _ResetDart   = void Function(Pointer<Void> ctx);
 // DSP isolate → Main:
 //   List<dynamic> [freq, midiNote, confidence, isOnset, bpm, chordLabel]
 
-class _IsolateInit {
-  final SendPort replyPort;
-  const _IsolateInit(this.replyPort);
-}
-
 /// Entry point for the DSP isolate. Runs entirely on a separate thread.
 void _dspIsolateMain(SendPort mainSendPort) {
   final receivePort = ReceivePort();
@@ -97,7 +94,7 @@ void _dspIsolateMain(SendPort mainSendPort) {
     if (message is Int16List) {
       // Copy Dart-side audio chunk into native memory
       final len = message.length.clamp(0, frameSize);
-      for (int i = 0; i < len; i++) nativeSamples[i] = message[i];
+      for (int i = 0; i < len; i++) { nativeSamples[i] = message[i]; }
 
       final result = process(ctx, nativeSamples, len);
       final bpm    = getBpm(ctx);
@@ -164,8 +161,9 @@ class DspFfiBridge {
 
     // All subsequent messages are List<dynamic> result payloads
     _receivePort!.listen((message) {
-      if (message is List<dynamic> && !_controller.isClosed)
+      if (message is List<dynamic> && !_controller.isClosed) {
         _controller.add(PitchResult.fromIsolateMessage(message));
+      }
     });
 
     _initialized = true;
