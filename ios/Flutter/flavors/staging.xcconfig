@@ -1,0 +1,6 @@
+// Staging flavor — test AdMob IDs, analytics enabled for pre-release validation
+PRODUCT_BUNDLE_IDENTIFIER = com.bigfeatdevelopment.soundscore.staging
+DISPLAY_NAME = SoundScore Staging
+ADMOB_APP_ID = ca-app-pub-3940256099942544~1458002511
+REVENUECAT_API_KEY = PLACEHOLDER_REVENUECAT_IOS_STAGING
+ENABLE_ANALYTICS = YES

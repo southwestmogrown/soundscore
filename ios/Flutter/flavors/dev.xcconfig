@@ -1,0 +1,6 @@
+// Dev flavor — uses test AdMob IDs, analytics disabled
+PRODUCT_BUNDLE_IDENTIFIER = com.bigfeatdevelopment.soundscore.dev
+DISPLAY_NAME = SoundScore Dev
+ADMOB_APP_ID = ca-app-pub-3940256099942544~1458002511
+REVENUECAT_API_KEY = PLACEHOLDER_REVENUECAT_IOS_DEV
+ENABLE_ANALYTICS = NO

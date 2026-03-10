@@ -1,0 +1,6 @@
+// Production flavor — replace placeholders with real keys before App Store submission
+PRODUCT_BUNDLE_IDENTIFIER = com.bigfeatdevelopment.soundscore
+DISPLAY_NAME = SoundScore
+ADMOB_APP_ID = PLACEHOLDER_ADMOB_IOS_APP_ID
+REVENUECAT_API_KEY = PLACEHOLDER_REVENUECAT_IOS_PROD
+ENABLE_ANALYTICS = YES

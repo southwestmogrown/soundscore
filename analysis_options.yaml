@@ -1,0 +1,31 @@
+include: package:flutter_lints/flutter.yaml
+
+linter:
+  rules:
+    # Style
+    always_declare_return_types: true
+    prefer_single_quotes: true
+    prefer_const_constructors: true
+    prefer_const_declarations: true
+    prefer_final_fields: true
+    prefer_final_locals: true
+    unnecessary_this: true
+
+    # Safety
+    avoid_print: true
+    avoid_dynamic_calls: true
+    cancel_subscriptions: true
+    close_sinks: true
+
+    # BLoC
+    unawaited_futures: true
+
+analyzer:
+  errors:
+    missing_required_param: error
+    missing_return: error
+    invalid_annotation_target: ignore   # freezed generates these
+  exclude:
+    - "**/*.g.dart"
+    - "**/*.freezed.dart"
+    - lib/generated/**
