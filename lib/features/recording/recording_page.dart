@@ -1,10 +1,14 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:go_router/go_router.dart';
 
 import 'package:soundscore/core/audio/audio_engine.dart';
 import 'package:soundscore/core/audio/ffi_bridge.dart';
 import 'package:soundscore/core/dsp/chord_result.dart';
 import 'package:soundscore/core/permissions/permission_handler_service.dart';
+import 'package:soundscore/features/tablature/bloc/tab_bloc.dart';
+import 'package:soundscore/features/tablature/bloc/tab_event.dart';
+import 'package:soundscore/shared/router/app_router.dart';
 
 import 'bloc/recording_bloc.dart';
 import 'bloc/recording_event.dart';
@@ -32,30 +36,50 @@ class _RecordingView extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        title: const Text('SoundScore'),
-        actions: [
-          BlocBuilder<RecordingBloc, RecordingState>(
-            buildWhen: (p, n) => p.status != n.status,
-            builder: (context, state) {
-              if (!state.isRecording) return const SizedBox.shrink();
-              return IconButton(
-                tooltip: 'Reset session',
-                icon: const Icon(Icons.refresh),
-                onPressed: () =>
-                    context.read<RecordingBloc>().add(const RecordingResetRequested()),
-              );
-            },
-          ),
-        ],
-      ),
-      body: const Column(
-        children: [
-          Expanded(child: _DetectionDisplay()),
-          _RecordButton(),
-          SizedBox(height: 32),
-        ],
+    return BlocListener<RecordingBloc, RecordingState>(
+      // Fire when a new onset note arrives (rising edge: false → true).
+      listenWhen: (prev, next) =>
+          next.latest.isOnset &&
+          next.latest.hasPitch &&
+          !prev.latest.isOnset,
+      listener: (context, state) {
+        context.read<TabBloc>().add(TabNoteAdded(
+              midiNote:   state.latest.midiNote,
+              confidence: state.latest.confidence,
+            ));
+      },
+      child: Scaffold(
+        appBar: AppBar(
+          title: const Text('SoundScore'),
+          actions: [
+            BlocBuilder<RecordingBloc, RecordingState>(
+              buildWhen: (p, n) => p.status != n.status,
+              builder: (context, state) {
+                if (!state.isRecording) return const SizedBox.shrink();
+                return IconButton(
+                  tooltip:   'Reset session',
+                  icon:      const Icon(Icons.refresh),
+                  onPressed: () => context
+                      .read<RecordingBloc>()
+                      .add(const RecordingResetRequested()),
+                );
+              },
+            ),
+          ],
+        ),
+        body: const Column(
+          children: [
+            Expanded(child: _DetectionDisplay()),
+            _RecordButton(),
+            SizedBox(height: 32),
+          ],
+        ),
+        floatingActionButton: FloatingActionButton.extended(
+          onPressed: () => context.push(Routes.tablature),
+          icon:      const Icon(Icons.queue_music_rounded),
+          label:     const Text('View Tab'),
+        ),
+        floatingActionButtonLocation: FloatingActionButtonLocation.startFloat,
       ),
     );
   }

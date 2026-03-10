@@ -20,7 +20,7 @@ class Note {
   int get octave => (midiNote ~/ 12) - 1;
 
   /// Full name with octave: "A4", "E2", "C#3", …
-  String get fullName => '${name}$octave';
+  String get fullName => '$name$octave';
 
   /// Theoretical frequency in Hz (equal temperament, A4 = 440 Hz).
   double get frequency => 440.0 * math.pow(2.0, (midiNote - 69) / 12.0);
