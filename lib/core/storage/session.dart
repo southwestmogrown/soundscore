@@ -1,3 +1,5 @@
+import 'dart:convert';
+
 import 'package:soundscore/core/music/instrument.dart';
 import 'package:soundscore/core/music/tab_note.dart';
 
@@ -62,25 +64,29 @@ class Session {
     );
   }
 
-  // ── JSON encoding for the notes list ─────────────────────────────────────
+  // ── JSON encoding for the notes list ──────────────────────────────────────
 
-  /// Encode notes as a compact string: "midiNote,string,fret,confidence;..."
+  /// Encode notes as a JSON array of objects.
   static String _encodeNotes(List<TabNote> notes) {
-    return notes.map((n) {
-      return '${n.midiNote},${n.string},${n.fret},${n.confidence}';
-    }).join(';');
+    return jsonEncode(notes.map((n) => {
+      'midi': n.midiNote,
+      's': n.string,
+      'f': n.fret,
+      'c': n.confidence,
+    }).toList());
   }
 
-  /// Decode notes from the compact string format.
+  /// Decode notes from the JSON array format.
   static List<TabNote> _decodeNotes(String encoded) {
-    if (encoded.isEmpty) return [];
-    return encoded.split(';').map((entry) {
-      final parts = entry.split(',');
+    if (encoded.isEmpty || encoded == '[]') return [];
+    final list = jsonDecode(encoded) as List<dynamic>;
+    return list.map((entry) {
+      final map = entry as Map<String, dynamic>;
       return TabNote(
-        midiNote: int.parse(parts[0]),
-        string: int.parse(parts[1]),
-        fret: int.parse(parts[2]),
-        confidence: double.parse(parts[3]),
+        midiNote: map['midi'] as int,
+        string: map['s'] as int,
+        fret: map['f'] as int,
+        confidence: (map['c'] as num).toDouble(),
       );
     }).toList();
   }

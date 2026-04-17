@@ -21,6 +21,7 @@ void main() {
       expect(map['name'], 'Test Session');
       expect(map['instrument_name'], 'Guitar – Standard');
       expect(map['notes_json'], isNotEmpty);
+      expect(map['notes_json'], contains('"midi"')); // JSON format
       expect(map['created_at'], '2026-04-17T12:00:00.000');
 
       // Simulate SQLite returning an id
@@ -49,7 +50,7 @@ void main() {
       );
 
       final map = session.toMap();
-      expect(map['notes_json'], '');
+      expect(map['notes_json'], '[]');
 
       final restored = Session.fromMap({...map, 'id': 1});
       expect(restored.notes, isEmpty);

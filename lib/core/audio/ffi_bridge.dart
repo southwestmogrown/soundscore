@@ -85,7 +85,7 @@ void _dspIsolateMain(SendPort mainSendPort) {
 
   // Allocate a reusable native buffer for PCM data (avoids per-frame alloc)
   final nativeSamples = calloc<Int16>(frameSize);
-  // Reusable buffer for chord label strings (max 7 chars: e.g. "F#m" + null)
+  // Reusable buffer for chord label strings (max 7 chars + null terminator = 8 bytes)
   const chordBufSize = 8;
   final chordBuf = calloc<Uint8>(chordBufSize);
 
