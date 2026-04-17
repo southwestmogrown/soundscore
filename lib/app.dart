@@ -35,7 +35,7 @@ class SoundScoreApp extends StatelessWidget {
             theme: AppTheme.light,
             darkTheme: AppTheme.dark,
             themeMode: _resolveThemeMode(settings.themeMode),
-            routerConfig: AppRouter.router,
+            routerConfig: AppRouter.router(preferencesService: prefs),
             debugShowCheckedModeBanner: AppConfig.instance.isDev,
           );
         },
