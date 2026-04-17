@@ -39,6 +39,12 @@ typedef _ProcessDart   = _NativePitchResult Function(
 typedef _GetBpmNative = Float Function(Pointer<Void> ctx);
 typedef _GetBpmDart   = double Function(Pointer<Void> ctx);
 
+typedef _GetChordNative = Int32 Function(Pointer<Void> ctx, Pointer<Uint8> buf, Int32 bufSize);
+typedef _GetChordDart   = int Function(Pointer<Void> ctx, Pointer<Uint8> buf, int bufSize);
+
+typedef _GetChordConfidenceNative = Float Function(Pointer<Void> ctx);
+typedef _GetChordConfidenceDart   = double Function(Pointer<Void> ctx);
+
 typedef _ResetNative = Void Function(Pointer<Void> ctx);
 typedef _ResetDart   = void Function(Pointer<Void> ctx);
 
@@ -67,6 +73,8 @@ void _dspIsolateMain(SendPort mainSendPort) {
   final destroy = lib.lookupFunction<_DestroyNative, _DestroyDart>('soundscore_destroy');
   final process = lib.lookupFunction<_ProcessNative, _ProcessDart>('soundscore_process_frame');
   final getBpm  = lib.lookupFunction<_GetBpmNative,  _GetBpmDart>('soundscore_get_bpm');
+  final getChord = lib.lookupFunction<_GetChordNative, _GetChordDart>('soundscore_get_chord');
+  final getChordConfidence = lib.lookupFunction<_GetChordConfidenceNative, _GetChordConfidenceDart>('soundscore_get_chord_confidence');
   final reset   = lib.lookupFunction<_ResetNative,   _ResetDart>('soundscore_reset');
 
   const sampleRate = 44100;
@@ -77,6 +85,9 @@ void _dspIsolateMain(SendPort mainSendPort) {
 
   // Allocate a reusable native buffer for PCM data (avoids per-frame alloc)
   final nativeSamples = calloc<Int16>(frameSize);
+  // Reusable buffer for chord label strings (max 7 chars: e.g. "F#m" + null)
+  const chordBufSize = 8;
+  final chordBuf = calloc<Uint8>(chordBufSize);
 
   receivePort.listen((message) {
     if (message == 'reset') {
@@ -87,6 +98,7 @@ void _dspIsolateMain(SendPort mainSendPort) {
     if (message == 'dispose') {
       destroy(ctx);
       calloc.free(nativeSamples);
+      calloc.free(chordBuf);
       receivePort.close();
       return;
     }
@@ -99,6 +111,12 @@ void _dspIsolateMain(SendPort mainSendPort) {
       final result = process(ctx, nativeSamples, len);
       final bpm    = getBpm(ctx);
 
+      // Read chord label from the native layer
+      final chordLen = getChord(ctx, chordBuf, chordBufSize);
+      final chordLabel = chordLen > 0
+          ? String.fromCharCodes(chordBuf.asTypedList(chordLen))
+          : '';
+
       // Serialise to plain List for cross-isolate transfer
       mainSendPort.send(<dynamic>[
         result.frequency,
@@ -106,7 +124,7 @@ void _dspIsolateMain(SendPort mainSendPort) {
         result.confidence,
         result.isOnset,
         bpm,
-        '', // chordLabel — populated by ChordAnalyzer in Phase 3 integration
+        chordLabel,
       ]);
     }
   });

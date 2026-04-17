@@ -5,6 +5,7 @@
 
 #include <cmath>
 #include <cstdlib>
+#include <cstring>
 #include <new>
 
 struct SoundScoreDspContext {
@@ -14,9 +15,14 @@ struct SoundScoreDspContext {
     OnsetDetector  onset;
     ChordAnalyzer  chord;
 
+    // Cached chord result from the most recent frame
+    std::string last_chord_label;
+    float       last_chord_confidence;
+
     SoundScoreDspContext(int sr, int fs)
         : sample_rate(sr), frame_size(fs),
-          yin(sr, fs), onset(sr, fs), chord(sr, fs) {}
+          yin(sr, fs), onset(sr, fs), chord(sr, fs),
+          last_chord_confidence(0.0f) {}
 };
 
 extern "C" {
@@ -37,7 +43,7 @@ SoundScorePitchResult soundscore_process_frame(
     SoundScorePitchResult result{};
     if (!ctx || !samples || num_samples <= 0) return result;
 
-    // Phase 2: real YIN + onset processing goes here
+    // Pitch detection (YIN algorithm)
     result.frequency  = ctx->yin.process(samples, num_samples);
     result.is_onset   = ctx->onset.detect(samples, num_samples) ? 1 : 0;
     result.confidence = ctx->yin.confidence();
@@ -52,6 +58,10 @@ SoundScorePitchResult soundscore_process_frame(
         result.frequency  = 0.0f;
     }
 
+    // Chord detection (chromagram + Krumhansl-Kessler correlation)
+    ctx->last_chord_label      = ctx->chord.process(samples, num_samples);
+    ctx->last_chord_confidence = ctx->chord.confidence();
+
     return result;
 }
 
@@ -65,6 +75,27 @@ void soundscore_reset(SoundScoreDspContext* ctx) {
     ctx->yin.reset();
     ctx->onset.reset();
     ctx->chord.reset();
+    ctx->last_chord_label.clear();
+    ctx->last_chord_confidence = 0.0f;
+}
+
+int soundscore_get_chord(SoundScoreDspContext* ctx, char* buf, int buf_size) {
+    if (!ctx || !buf || buf_size <= 0) {
+        if (buf && buf_size > 0) buf[0] = '\0';
+        return 0;
+    }
+
+    const auto& label = ctx->last_chord_label;
+    const int len = static_cast<int>(label.size());
+    const int copy_len = (len < buf_size - 1) ? len : (buf_size - 1);
+    std::memcpy(buf, label.c_str(), copy_len);
+    buf[copy_len] = '\0';
+    return copy_len;
+}
+
+float soundscore_get_chord_confidence(SoundScoreDspContext* ctx) {
+    if (!ctx) return 0.0f;
+    return ctx->last_chord_confidence;
 }
 
 } // extern "C"
