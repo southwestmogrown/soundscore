@@ -3,6 +3,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 
 import 'package:soundscore/core/export/tab_export_service.dart';
 import 'package:soundscore/core/music/instrument.dart';
+import 'package:soundscore/core/music/tab_note.dart';
 
 import 'bloc/tab_bloc.dart';
 import 'bloc/tab_event.dart';
@@ -115,13 +116,13 @@ void _onShareSelected(
   BuildContext context,
   String action,
   Instrument instrument,
-  List<dynamic> notes,
+  List<TabNote> notes,
 ) {
   switch (action) {
     case 'text':
-      TabExportService.shareText(instrument, notes.cast());
+      TabExportService.shareText(instrument, notes);
     case 'pdf':
-      TabExportService.sharePdf(instrument, notes.cast());
+      TabExportService.sharePdf(instrument, notes);
     case 'save':
       _showSaveDialog(context);
   }

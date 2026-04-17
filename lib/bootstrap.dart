@@ -31,7 +31,7 @@ Future<void> bootstrap() async {
         // Firebase not configured yet — safe to ignore during development
       }
 
-      runApp(const SoundScoreApp());
+      runApp(SoundScoreApp());
     },
     (error, stack) {
       if (AppConfig.instance.enableCrashlytics) {

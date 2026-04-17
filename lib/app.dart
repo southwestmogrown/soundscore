@@ -11,19 +11,19 @@ import 'shared/router/app_router.dart';
 import 'shared/theme/app_theme.dart';
 
 class SoundScoreApp extends StatelessWidget {
-  const SoundScoreApp({super.key, this.preferencesService});
+  SoundScoreApp({super.key, PreferencesService? preferencesService})
+      : _prefs = preferencesService ?? PreferencesService();
 
-  final PreferencesService? preferencesService;
+  final PreferencesService _prefs;
+  late final _router = AppRouter.router(preferencesService: _prefs);
 
   @override
   Widget build(BuildContext context) {
-    final prefs = preferencesService ?? PreferencesService();
-
     return MultiBlocProvider(
       providers: [
         BlocProvider(create: (_) => TabBloc()),
         BlocProvider(
-          create: (_) => SettingsBloc(preferencesService: prefs)
+          create: (_) => SettingsBloc(preferencesService: _prefs)
             ..add(const SettingsLoadRequested()),
         ),
       ],
@@ -35,7 +35,7 @@ class SoundScoreApp extends StatelessWidget {
             theme: AppTheme.light,
             darkTheme: AppTheme.dark,
             themeMode: _resolveThemeMode(settings.themeMode),
-            routerConfig: AppRouter.router(preferencesService: prefs),
+            routerConfig: _router,
             debugShowCheckedModeBanner: AppConfig.instance.isDev,
           );
         },
