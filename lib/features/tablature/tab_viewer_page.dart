@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
+import 'package:soundscore/core/export/tab_export_service.dart';
 import 'package:soundscore/core/music/instrument.dart';
 
 import 'bloc/tab_bloc.dart';
@@ -54,6 +55,46 @@ class TabViewerPage extends StatelessWidget {
             onPressed: () =>
                 context.read<TabBloc>().add(const TabCleared()),
           ),
+          // ── Share menu ──────────────────────────────────────────────────
+          BlocBuilder<TabBloc, TabState>(
+            buildWhen: (p, n) => p.notes.length != n.notes.length,
+            builder: (context, state) {
+              if (state.isEmpty) return const SizedBox.shrink();
+              return PopupMenuButton<String>(
+                icon: const Icon(Icons.share_rounded),
+                tooltip: 'Share / Export',
+                onSelected: (value) => _onShareSelected(
+                  context, value, state.instrument, state.notes,
+                ),
+                itemBuilder: (_) => const [
+                  PopupMenuItem(
+                    value: 'text',
+                    child: ListTile(
+                      leading: Icon(Icons.text_snippet_rounded),
+                      title: Text('Share as Text'),
+                      dense: true,
+                    ),
+                  ),
+                  PopupMenuItem(
+                    value: 'pdf',
+                    child: ListTile(
+                      leading: Icon(Icons.picture_as_pdf_rounded),
+                      title: Text('Share as PDF'),
+                      dense: true,
+                    ),
+                  ),
+                  PopupMenuItem(
+                    value: 'save',
+                    child: ListTile(
+                      leading: Icon(Icons.save_rounded),
+                      title: Text('Save Session'),
+                      dense: true,
+                    ),
+                  ),
+                ],
+              );
+            },
+          ),
         ],
       ),
       body: BlocBuilder<TabBloc, TabState>(
@@ -66,6 +107,68 @@ class TabViewerPage extends StatelessWidget {
       ),
     );
   }
+}
+
+// ── Share / export handler ─────────────────────────────────────────────────
+
+void _onShareSelected(
+  BuildContext context,
+  String action,
+  Instrument instrument,
+  List<dynamic> notes,
+) {
+  switch (action) {
+    case 'text':
+      TabExportService.shareText(instrument, notes.cast());
+    case 'pdf':
+      TabExportService.sharePdf(instrument, notes.cast());
+    case 'save':
+      _showSaveDialog(context);
+  }
+}
+
+void _showSaveDialog(BuildContext context) {
+  final controller = TextEditingController(
+    text: 'Session ${DateTime.now().toString().substring(0, 16)}',
+  );
+
+  showDialog<void>(
+    context: context,
+    builder: (dialogContext) {
+      return AlertDialog(
+        title: const Text('Save Session'),
+        content: TextField(
+          controller: controller,
+          decoration: const InputDecoration(
+            labelText: 'Session name',
+            hintText: 'Enter a name for this session',
+          ),
+          autofocus: true,
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(dialogContext).pop(),
+            child: const Text('Cancel'),
+          ),
+          FilledButton(
+            onPressed: () {
+              final name = controller.text.trim();
+              if (name.isNotEmpty) {
+                context.read<TabBloc>().add(
+                      TabSessionSaveRequested(name: name),
+                    );
+                Navigator.of(dialogContext).pop();
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(content: Text('Session saved')),
+                );
+              }
+            },
+            child: const Text('Save'),
+          ),
+        ],
+      );
+    },
+  );
 }
 
 // ── Tab staff ──────────────────────────────────────────────────────────────
