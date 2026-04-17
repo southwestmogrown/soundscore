@@ -1,5 +1,6 @@
 import 'package:go_router/go_router.dart';
 
+import '../../core/storage/preferences_service.dart';
 import '../../features/onboarding/onboarding_page.dart';
 import '../../features/recording/recording_page.dart';
 import '../../features/settings/settings_page.dart';
@@ -8,35 +9,48 @@ import '../../features/tablature/tab_viewer_page.dart';
 import '../../features/sheet_music/sheet_music_page.dart';
 
 abstract final class AppRouter {
-  static final router = GoRouter(
-    initialLocation: Routes.recording,
-    routes: [
-      GoRoute(
-        path: Routes.onboarding,
-        builder: (context, state) => const OnboardingPage(),
-      ),
-      GoRoute(
-        path: Routes.recording,
-        builder: (context, state) => const RecordingPage(),
-      ),
-      GoRoute(
-        path: Routes.tablature,
-        builder: (context, state) => const TabViewerPage(),
-      ),
-      GoRoute(
-        path: Routes.sheetMusic,
-        builder: (context, state) => const SheetMusicPage(),
-      ),
-      GoRoute(
-        path: Routes.settings,
-        builder: (context, state) => const SettingsPage(),
-      ),
-      GoRoute(
-        path: Routes.paywall,
-        builder: (context, state) => const PaywallPage(),
-      ),
-    ],
-  );
+  static GoRouter router({PreferencesService? preferencesService}) {
+    final prefs = preferencesService ?? PreferencesService();
+
+    return GoRouter(
+      initialLocation: Routes.recording,
+      redirect: (context, state) async {
+        // Check if onboarding is complete; redirect to /onboarding if not.
+        // Only redirect from the recording (home) route to avoid loops.
+        if (state.matchedLocation == Routes.recording) {
+          final complete = await prefs.isOnboardingComplete();
+          if (!complete) return Routes.onboarding;
+        }
+        return null;
+      },
+      routes: [
+        GoRoute(
+          path: Routes.onboarding,
+          builder: (context, state) => const OnboardingPage(),
+        ),
+        GoRoute(
+          path: Routes.recording,
+          builder: (context, state) => const RecordingPage(),
+        ),
+        GoRoute(
+          path: Routes.tablature,
+          builder: (context, state) => const TabViewerPage(),
+        ),
+        GoRoute(
+          path: Routes.sheetMusic,
+          builder: (context, state) => const SheetMusicPage(),
+        ),
+        GoRoute(
+          path: Routes.settings,
+          builder: (context, state) => const SettingsPage(),
+        ),
+        GoRoute(
+          path: Routes.paywall,
+          builder: (context, state) => const PaywallPage(),
+        ),
+      ],
+    );
+  }
 }
 
 abstract final class Routes {

@@ -65,6 +65,11 @@ class _RecordingView extends StatelessWidget {
                 );
               },
             ),
+            IconButton(
+              tooltip:   'Settings',
+              icon:      const Icon(Icons.settings_rounded),
+              onPressed: () => context.push(Routes.settings),
+            ),
           ],
         ),
         body: const Column(

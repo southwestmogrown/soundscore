@@ -28,3 +28,32 @@ class TabInstrumentChanged extends TabEvent {
 class TabCleared extends TabEvent {
   const TabCleared();
 }
+
+/// User requested to save the current session.
+class TabSessionSaveRequested extends TabEvent {
+  const TabSessionSaveRequested({required this.name});
+  final String name;
+  @override
+  List<Object?> get props => [name];
+}
+
+/// User requested to load a previously saved session.
+class TabSessionLoadRequested extends TabEvent {
+  const TabSessionLoadRequested({required this.sessionId});
+  final int sessionId;
+  @override
+  List<Object?> get props => [sessionId];
+}
+
+/// Load all saved sessions for display in a session list.
+class TabSessionListRequested extends TabEvent {
+  const TabSessionListRequested();
+}
+
+/// User requested to delete a saved session.
+class TabSessionDeleteRequested extends TabEvent {
+  const TabSessionDeleteRequested({required this.sessionId});
+  final int sessionId;
+  @override
+  List<Object?> get props => [sessionId];
+}

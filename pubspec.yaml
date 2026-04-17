@@ -33,6 +33,7 @@ dependencies:
   # isar + isar_generator added in Phase 4 (requires version pinning with freezed)
   sqflite: ^2.3.3+1       # Simple SQL storage for Phase 1 session data
   path_provider: ^2.1.3
+  shared_preferences: ^2.3.3  # User preferences (theme, instrument, etc.)
 
   # ── Export ─────────────────────────────────────────────────────────────────
   pdf: ^3.11.1
@@ -54,6 +55,8 @@ dev_dependencies:
   flutter_test:
     sdk: flutter
   flutter_lints: ^4.0.0
+  bloc_test: ^9.1.7
+  mocktail: ^1.0.4
 
   # Code generation
   build_runner: ^2.4.12

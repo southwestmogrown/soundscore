@@ -58,6 +58,22 @@ SoundScorePitchResult soundscore_process_frame(
 float soundscore_get_bpm(SoundScoreDspContext* ctx);
 
 /**
+ * Get the chord label detected in the most recent frame.
+ *
+ * @param ctx  DSP context.
+ * @param buf  Output buffer to receive a null-terminated chord label string
+ *             (e.g. "Am", "G", "F#m"). Empty string if no chord was detected.
+ * @param buf_size  Size of the output buffer in bytes. 8 bytes is sufficient.
+ * @return     Actual string length (excluding null terminator), or 0 if none.
+ */
+int soundscore_get_chord(SoundScoreDspContext* ctx, char* buf, int buf_size);
+
+/**
+ * Get the confidence of the most recently detected chord (0.0–1.0).
+ */
+float soundscore_get_chord_confidence(SoundScoreDspContext* ctx);
+
+/**
  * Reset accumulated note/onset history (call when starting a new recording session).
  */
 void soundscore_reset(SoundScoreDspContext* ctx);
