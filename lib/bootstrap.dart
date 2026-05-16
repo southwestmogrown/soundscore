@@ -27,14 +27,15 @@ Future<void> bootstrap() async {
         if (config.enableCrashlytics) {
           FlutterError.onError = FirebaseCrashlytics.instance.recordFlutterFatalError;
         }
-      } catch (_) {
+      } catch (e) {
         // Firebase not configured yet — safe to ignore during development
+        debugPrint('Firebase initialization skipped: $e');
       }
 
       runApp(SoundScoreApp());
     },
     (error, stack) {
-      if (AppConfig.instance.enableCrashlytics) {
+      if (AppConfig.hasInstance && AppConfig.instance.enableCrashlytics) {
         FirebaseCrashlytics.instance.recordError(error, stack, fatal: true);
       } else {
         debugPrint('Uncaught error: $error\n$stack');

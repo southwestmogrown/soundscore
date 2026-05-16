@@ -21,16 +21,16 @@ class SettingsPage extends StatelessWidget {
           return ListView(
             padding: const EdgeInsets.symmetric(vertical: 8),
             children: [
-              _SectionHeader(title: 'Instrument'),
+              const _SectionHeader(title: 'Instrument'),
               _InstrumentTile(current: state.instrument),
               const Divider(),
-              _SectionHeader(title: 'Appearance'),
+              const _SectionHeader(title: 'Appearance'),
               _ThemeModeTile(current: state.themeMode),
               const Divider(),
-              _SectionHeader(title: 'Detection'),
+              const _SectionHeader(title: 'Detection'),
               _ConfidenceThresholdTile(current: state.confidenceThreshold),
               const Divider(),
-              _SectionHeader(title: 'About'),
+              const _SectionHeader(title: 'About'),
               const _AboutTile(),
             ],
           );

@@ -63,7 +63,7 @@ void main() {
     test('initial state is idle', () {
       final bloc = buildBloc();
       expect(bloc.state.status, RecordingStatus.idle);
-      expect(bloc.state.latest, PitchResult.silence);
+      expect(bloc.state.latest, pitchResultSilence);
       expect(bloc.state.errorMessage, isNull);
       bloc.close();
     });

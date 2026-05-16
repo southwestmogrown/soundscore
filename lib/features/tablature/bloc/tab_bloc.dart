@@ -1,4 +1,6 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+
 import 'package:soundscore/core/music/tab_calculator.dart';
 import 'package:soundscore/core/storage/session.dart';
 import 'package:soundscore/core/storage/session_repository.dart';
@@ -20,6 +22,13 @@ class TabBloc extends Bloc<TabEvent, TabState> {
     on<TabSessionDeleteRequested>(_onSessionDelete);
   }
 
+  @override
+  void onError(Object error, StackTrace stackTrace) {
+    // TODO: route through crashlytics / error reporting
+    FlutterError.presentError(
+        FlutterErrorDetails(exception: 'TabBloc uncaught error: $error'));
+  }
+
   late TabCalculator _calculator;
   final SessionRepository? _sessionRepository;
 
@@ -32,7 +41,8 @@ class TabBloc extends Bloc<TabEvent, TabState> {
     emit(state.copyWith(notes: [...state.notes, note]));
   }
 
-  void _onInstrumentChanged(TabInstrumentChanged event, Emitter<TabState> emit) {
+  void _onInstrumentChanged(
+      TabInstrumentChanged event, Emitter<TabState> emit) {
     _calculator = TabCalculator(event.instrument);
     // Changing instrument clears notes — re-calculating old notes for a
     // different instrument tuning would produce meaningless results.
@@ -55,7 +65,11 @@ class TabBloc extends Bloc<TabEvent, TabState> {
     Emitter<TabState> emit,
   ) async {
     final repo = _sessionRepository;
-    if (repo == null || state.notes.isEmpty) return;
+    if (repo == null) {
+      emit(state.copyWith(errorMessage: 'Session storage unavailable'));
+      return;
+    }
+    if (state.notes.isEmpty) return;
 
     final session = Session(
       name: event.name,
@@ -69,6 +83,7 @@ class TabBloc extends Bloc<TabEvent, TabState> {
     emit(state.copyWith(
       savedSessions: sessions,
       currentSessionId: saved.id,
+      clearError: true,
     ));
   }
 
@@ -77,10 +92,16 @@ class TabBloc extends Bloc<TabEvent, TabState> {
     Emitter<TabState> emit,
   ) async {
     final repo = _sessionRepository;
-    if (repo == null) return;
+    if (repo == null) {
+      emit(state.copyWith(errorMessage: 'Session storage unavailable'));
+      return;
+    }
 
     final session = await repo.getById(event.sessionId);
-    if (session == null) return;
+    if (session == null) {
+      emit(state.copyWith(errorMessage: 'Session not found'));
+      return;
+    }
 
     _calculator = TabCalculator(session.instrument);
     _calculator.reset();
@@ -97,7 +118,10 @@ class TabBloc extends Bloc<TabEvent, TabState> {
     Emitter<TabState> emit,
   ) async {
     final repo = _sessionRepository;
-    if (repo == null) return;
+    if (repo == null) {
+      emit(state.copyWith(errorMessage: 'Session storage unavailable'));
+      return;
+    }
 
     final sessions = await repo.getAll();
     emit(state.copyWith(savedSessions: sessions));
@@ -108,7 +132,10 @@ class TabBloc extends Bloc<TabEvent, TabState> {
     Emitter<TabState> emit,
   ) async {
     final repo = _sessionRepository;
-    if (repo == null) return;
+    if (repo == null) {
+      emit(state.copyWith(errorMessage: 'Session storage unavailable'));
+      return;
+    }
 
     await repo.delete(event.sessionId);
     final sessions = await repo.getAll();

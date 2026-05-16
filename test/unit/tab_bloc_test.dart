@@ -63,9 +63,9 @@ void main() {
     blocTest<TabBloc, TabState>(
       'TabInstrumentChanged changes instrument and clears notes',
       build: TabBloc.new,
-      seed: () => TabState(
+      seed: () => const TabState(
         instrument: Instrument.guitarStandard,
-        notes: const [
+        notes: [
           TabNote(midiNote: 40, string: 0, fret: 0, confidence: 0.9),
         ],
       ),
@@ -82,9 +82,9 @@ void main() {
     blocTest<TabBloc, TabState>(
       'TabCleared clears notes but keeps instrument',
       build: TabBloc.new,
-      seed: () => TabState(
+      seed: () => const TabState(
         instrument: Instrument.guitarDropD,
-        notes: const [
+        notes: [
           TabNote(midiNote: 38, string: 0, fret: 0, confidence: 0.9),
           TabNote(midiNote: 45, string: 1, fret: 0, confidence: 0.8),
         ],

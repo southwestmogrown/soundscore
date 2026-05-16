@@ -41,6 +41,7 @@ class PreferencesService {
   }
 
   Future<void> setThemeMode(String mode) async {
+    if (mode != 'system' && mode != 'light' && mode != 'dark') return;
     final prefs = await _instance;
     await prefs.setString(_keyThemeMode, mode);
   }

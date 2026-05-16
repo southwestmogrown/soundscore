@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:soundscore/core/storage/preferences_service.dart';
 
@@ -12,6 +13,13 @@ class SettingsBloc extends Bloc<SettingsEvent, SettingsState> {
     on<SettingsInstrumentChanged>(_onInstrumentChanged);
     on<SettingsThemeModeChanged>(_onThemeModeChanged);
     on<SettingsConfidenceThresholdChanged>(_onConfidenceThresholdChanged);
+  }
+
+  @override
+  void onError(Object error, StackTrace stackTrace) {
+    // TODO: route through crashlytics / error reporting
+    FlutterError.presentError(
+        FlutterErrorDetails(exception: 'SettingsBloc uncaught error: $error'));
   }
 
   final PreferencesService _prefs;

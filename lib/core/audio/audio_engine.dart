@@ -19,12 +19,13 @@ class RecordAudioEngine implements AudioEngine {
   static const int sampleRate = 44100;
   static const int frameSize  = 2048;
 
-  final AudioRecorder _recorder = AudioRecorder();
+  late final AudioRecorder? _recorder;
   StreamController<Int16List>? _controller;
   StreamSubscription<Uint8List>? _rawSub;
 
   // Accumulate raw bytes until we have a full frame
-  final _buffer = <int>[];
+  final _buffer = Uint8List(frameSize * 2);
+  int _bufferHead = 0;
 
   @override
   Stream<Int16List> get pcmStream {
@@ -35,9 +36,10 @@ class RecordAudioEngine implements AudioEngine {
   @override
   Future<void> start() async {
     _controller ??= StreamController<Int16List>.broadcast();
-    _buffer.clear();
+    _bufferHead = 0;
+    _recorder ??= AudioRecorder();
 
-    final rawStream = await _recorder.startStream(
+    final rawStream = await _recorder!.startStream(
       const RecordConfig(
         encoder:    AudioEncoder.pcm16bits,
         sampleRate: sampleRate,
@@ -49,17 +51,16 @@ class RecordAudioEngine implements AudioEngine {
   }
 
   void _onBytes(Uint8List bytes) {
-    _buffer.addAll(bytes);
+    for (final b in bytes) {
+      _buffer[_bufferHead] = b;
+      _bufferHead++;
 
-    // Each PCM16 sample is 2 bytes → frameSize samples = frameSize * 2 bytes
-    const frameBytes = frameSize * 2;
-    while (_buffer.length >= frameBytes) {
-      final chunk = Uint8List.fromList(_buffer.sublist(0, frameBytes));
-      _buffer.removeRange(0, frameBytes);
-
-      // Reinterpret as Int16 (little-endian, as produced by the record pkg)
-      final frame = chunk.buffer.asInt16List();
-      _controller!.add(frame);
+      if (_bufferHead == _buffer.length) {
+        // Reinterpret as Int16 (little-endian, as produced by the record pkg)
+        final frame = _buffer.buffer.asInt16List();
+        _controller!.add(frame);
+        _bufferHead = 0;
+      }
     }
   }
 
@@ -67,14 +68,16 @@ class RecordAudioEngine implements AudioEngine {
   Future<void> stop() async {
     await _rawSub?.cancel();
     _rawSub = null;
-    await _recorder.stop();
-    _buffer.clear();
+    await _recorder?.stop();
+    _bufferHead = 0;
+    _controller?.close();
+    _controller = null;
   }
 
   @override
   void dispose() {
     _rawSub?.cancel();
     _controller?.close();
-    _recorder.dispose();
+    _recorder?.dispose();
   }
 }

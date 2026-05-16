@@ -1,12 +1,12 @@
 import 'package:go_router/go_router.dart';
 
-import '../../core/storage/preferences_service.dart';
-import '../../features/onboarding/onboarding_page.dart';
-import '../../features/recording/recording_page.dart';
-import '../../features/settings/settings_page.dart';
-import '../../features/subscription/paywall_page.dart';
-import '../../features/tablature/tab_viewer_page.dart';
-import '../../features/sheet_music/sheet_music_page.dart';
+import 'package:soundscore/core/storage/preferences_service.dart';
+import 'package:soundscore/features/onboarding/onboarding_page.dart';
+import 'package:soundscore/features/recording/recording_page.dart';
+import 'package:soundscore/features/settings/settings_page.dart';
+import 'package:soundscore/features/subscription/paywall_page.dart';
+import 'package:soundscore/features/tablature/tab_viewer_page.dart';
+import 'package:soundscore/features/sheet_music/sheet_music_page.dart';
 
 abstract final class AppRouter {
   static GoRouter router({PreferencesService? preferencesService}) {

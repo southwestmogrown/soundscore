@@ -65,6 +65,7 @@ class Session {
   }
 
   // ── JSON encoding for the notes list ──────────────────────────────────────
+  // Schema: [{m: midiNote (int), s: string (int), f: fret (int), c: confidence (double)}]
 
   /// Encode notes as a JSON array of objects.
   static String _encodeNotes(List<TabNote> notes) {
@@ -77,18 +78,24 @@ class Session {
   }
 
   /// Decode notes from the JSON array format.
+  /// Silently returns empty list on malformed JSON.
   static List<TabNote> _decodeNotes(String encoded) {
     if (encoded.isEmpty || encoded == '[]') return [];
-    final list = jsonDecode(encoded) as List<dynamic>;
-    return list.map((entry) {
-      final map = entry as Map<String, dynamic>;
-      return TabNote(
-        midiNote: map['midi'] as int,
-        string: map['s'] as int,
-        fret: map['f'] as int,
-        confidence: (map['c'] as num).toDouble(),
-      );
-    }).toList();
+    try {
+      final list = jsonDecode(encoded) as List<dynamic>;
+      return list.map((entry) {
+        final map = entry as Map<String, dynamic>;
+        return TabNote(
+          midiNote: map['midi'] as int,
+          string: map['s'] as int,
+          fret: map['f'] as int,
+          confidence: (map['c'] as num).toDouble(),
+        );
+      }).toList();
+    } catch (_) {
+      // Corrupted JSON — return empty rather than crashing
+      return [];
+    }
   }
 
   @override

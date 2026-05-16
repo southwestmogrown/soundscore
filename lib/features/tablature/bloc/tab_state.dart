@@ -9,12 +9,14 @@ class TabState extends Equatable {
     this.notes      = const [],
     this.savedSessions = const [],
     this.currentSessionId,
+    this.errorMessage,
   });
 
   final Instrument   instrument;
   final List<TabNote> notes;
   final List<Session> savedSessions;
   final int?         currentSessionId;
+  final String?      errorMessage;
 
   bool get isEmpty => notes.isEmpty;
 
@@ -24,15 +26,18 @@ class TabState extends Equatable {
     List<Session>? savedSessions,
     int? currentSessionId,
     bool clearSessionId = false,
+    String? errorMessage,
+    bool clearError = false,
   }) {
     return TabState(
       instrument: instrument ?? this.instrument,
       notes:      notes      ?? this.notes,
       savedSessions: savedSessions ?? this.savedSessions,
       currentSessionId: clearSessionId ? null : (currentSessionId ?? this.currentSessionId),
+      errorMessage: clearError ? null : (errorMessage ?? this.errorMessage),
     );
   }
 
   @override
-  List<Object?> get props => [instrument, notes, savedSessions, currentSessionId];
+  List<Object?> get props => [instrument, notes, savedSessions, currentSessionId, errorMessage];
 }

@@ -50,6 +50,8 @@ Rules:
 - All events and states are immutable. New fields go through `Equatable` or `Freezed`.
 - Page-scoped BLoCs are created in the page widget, not in `app.dart`.
 - Never share a BLoC instance between features — use events to communicate across feature boundaries (e.g., `RecordingPage` fires `TabNoteAdded` into `TabBloc`).
+- All BLoCs have an `onError` handler that routes uncaught async exceptions through `FlutterError.presentError`.
+- Internal-only events (not part of the public API) are prefixed with `_` and defined in the BLoC file or events file.
 
 ### Navigation: GoRouter
 
@@ -66,7 +68,7 @@ Current routes: `/onboarding`, `/` (recording), `/tablature`, `/sheet-music`, `/
 
 DSP result types (`PitchResult`, `ChordResult`) and any new data models should use `@freezed`. Run `build_runner` after modifying annotated files.
 
-Plain data classes (e.g., `TabNote`, `Session`) are handwritten — they are not Freezed. Adding fields to these requires manually updating JSON encode/decode in `Session._encodeNotes` / `_decodeNotes`.
+Plain data classes (e.g., `TabNote`, `Session`) are handwritten — they are not Freezed. Adding fields to these requires manually updating JSON encode/decode in `Session._encodeNotes` / `_decodeNotes`. The notes JSON schema uses single-char keys: `{m: midiNote, s: string, f: fret, c: confidence}`.
 
 ### Audio Pipeline
 
@@ -84,11 +86,13 @@ Microphone (44.1kHz, 16-bit mono PCM, 2048-sample frames)
 - The FFI bridge runs in a dedicated Dart `Isolate`. Do not call FFI functions from the main isolate.
 - The C++ library emits `[frequency, midiNote, confidence, isOnset, bpm, chordLabel]` per frame.
 - `RecordingBloc` filters on `isOnset == true` before firing `TabNoteAdded`. The tuner must not apply this filter.
+- `PitchResult.fromIsolateMessage` validates the message has at least 6 elements and that `midiNote` is in range 0–127.
+- `RecordAudioEngine` uses a ring buffer (`Uint8List`) for efficient zero-copy audio frame assembly.
 
 ### Storage
 
-- **SQLite (`sqflite`):** Named sessions — `lib/core/storage/session_repository.dart`
-- **SharedPreferences:** User settings — `lib/core/storage/preferences_service.dart`
+- **SQLite (`sqflite`):** Named sessions — `lib/core/storage/session_repository.dart`. Uses a `Completer`-guarded lazy init to prevent race conditions. Includes an `onUpgrade` skeleton for future schema migrations.
+- **SharedPreferences:** User settings — `lib/core/storage/preferences_service.dart`. `setThemeMode` validates input to `system|light|dark`.
 - All storage is local-first. There is no backend or network API.
 
 ### Flavors & Config
@@ -96,6 +100,7 @@ Microphone (44.1kHz, 16-bit mono PCM, 2048-sample frames)
 `AppConfig` in `lib/core/config/app_config.dart` holds per-flavor API keys and feature flags. Access via `AppConfig.instance` anywhere in the app (set at startup in `main_*.dart`).
 
 - `enableAnalytics` / `enableCrashlytics` are `false` in `dev`, `true` in `staging` and `prod`.
+- `AppConfig.hasInstance` is available for guards in error handlers that may fire before `setInstance` is called.
 - AdMob App IDs must also appear in `AndroidManifest.xml` and `Info.plist` at build time.
 - RevenueCat and AdMob keys in `AppConfig` are placeholder strings — replace before enabling monetization features.
 
@@ -110,6 +115,7 @@ Microphone (44.1kHz, 16-bit mono PCM, 2048-sample frames)
 - Do not import a feature from another feature. Cross-feature communication goes through app-level BLoC events.
 - Prefer `const` constructors everywhere possible.
 - New packages require justification — check `pubspec.yaml` before adding one; several capabilities (WebView, PDF, RevenueCat, AdMob) are already present but unused.
+- Use `package:soundscore/...` absolute imports throughout — avoid relative import paths.
 
 ---
 

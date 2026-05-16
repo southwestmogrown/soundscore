@@ -1,5 +1,6 @@
 import 'dart:async';
 
+import 'package:flutter/foundation.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
 import 'package:soundscore/core/audio/audio_engine.dart';
@@ -15,22 +16,29 @@ class RecordingBloc extends Bloc<RecordingEvent, RecordingState> {
     required AudioEngine audioEngine,
     required DspFfiBridge bridge,
     required PermissionHandlerService permissions,
-  })  : _engine      = audioEngine,
-        _bridge      = bridge,
+  })  : _engine = audioEngine,
+        _bridge = bridge,
         _permissions = permissions,
         super(const RecordingState()) {
     on<RecordingStartRequested>(_onStartRequested);
     on<RecordingStopRequested>(_onStopRequested);
     on<RecordingResetRequested>(_onResetRequested);
-    on<_PitchResultReceived>(_onPitchResult);
+    on<PitchResultReceived>(_onPitchResult);
   }
 
-  final AudioEngine              _engine;
-  final DspFfiBridge             _bridge;
+  final AudioEngine _engine;
+  final DspFfiBridge _bridge;
   final PermissionHandlerService _permissions;
 
   StreamSubscription? _pcmSub;
   StreamSubscription? _resultSub;
+
+  @override
+  void onError(Object error, StackTrace stackTrace) {
+    // TODO: route through crashlytics / error reporting
+    FlutterError.presentError(
+        FlutterErrorDetails(exception: 'RecordingBloc uncaught error: $error'));
+  }
 
   // ── Event handlers ────────────────────────────────────────────────────────
 
@@ -38,12 +46,13 @@ class RecordingBloc extends Bloc<RecordingEvent, RecordingState> {
     RecordingStartRequested event,
     Emitter<RecordingState> emit,
   ) async {
-    emit(state.copyWith(status: RecordingStatus.requestingPermission, clearError: true));
+    emit(state.copyWith(
+        status: RecordingStatus.requestingPermission, clearError: true));
 
     final granted = await _permissions.requestMicrophone();
     if (!granted) {
       emit(state.copyWith(
-        status:       RecordingStatus.permissionDenied,
+        status: RecordingStatus.permissionDenied,
         errorMessage: 'Microphone permission is required to detect notes.',
       ));
       return;
@@ -54,7 +63,9 @@ class RecordingBloc extends Bloc<RecordingEvent, RecordingState> {
 
     // Forward DSP results into the BLoC event stream
     _resultSub = _bridge.results.listen(
-      (result) { if (!isClosed) add(_PitchResultReceived(result)); },
+      (result) {
+        if (!isClosed) add(PitchResultReceived(result));
+      },
     );
 
     // Forward PCM frames from the microphone → FFI bridge
@@ -83,7 +94,7 @@ class RecordingBloc extends Bloc<RecordingEvent, RecordingState> {
   }
 
   void _onPitchResult(
-    _PitchResultReceived event,
+    PitchResultReceived event,
     Emitter<RecordingState> emit,
   ) {
     if (state.isRecording) {
@@ -108,13 +119,4 @@ class RecordingBloc extends Bloc<RecordingEvent, RecordingState> {
     _bridge.dispose();
     return super.close();
   }
-}
-
-// ── Internal event ─────────────────────────────────────────────────────────
-
-class _PitchResultReceived extends RecordingEvent {
-  const _PitchResultReceived(this.result);
-  final PitchResult result;
-  @override
-  List<Object?> get props => [result];
 }

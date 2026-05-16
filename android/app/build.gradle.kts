@@ -11,7 +11,7 @@ android {
     compileSdk = flutter.compileSdkVersion
 
     // NDK 25 required for C++17 DSP library
-    ndkVersion = "25.1.8937393"
+    ndkVersion = "28.2.13676358"
 
     compileOptions {
         sourceCompatibility = JavaVersion.VERSION_17
@@ -31,7 +31,7 @@ android {
     }
 
     defaultConfig {
-        applicationId = "com.bigfeatdevelopment.soundscore"
+        applicationId = "com.wilkeydigitalsolutions.tabscribe"
         minSdk = 24           // Android 7.0 — lowest with reliable audio recording
         targetSdk = 34        // Required for new Play Store submissions
         versionCode = flutter.versionCode

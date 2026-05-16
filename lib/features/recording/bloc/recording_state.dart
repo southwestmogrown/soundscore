@@ -11,8 +11,8 @@ enum RecordingStatus {
 
 class RecordingState extends Equatable {
   const RecordingState({
-    this.status  = RecordingStatus.idle,
-    this.latest  = PitchResult.silence,
+    this.status = RecordingStatus.idle,
+    this.latest = pitchResultSilence,
     this.errorMessage,
   });
 
@@ -25,21 +25,19 @@ class RecordingState extends Equatable {
   /// occurred.
   final String? errorMessage;
 
-  bool get isRecording  => status == RecordingStatus.recording;
-  bool get canRecord    => status == RecordingStatus.idle ||
-                           status == RecordingStatus.permissionDenied;
+  bool get isRecording => status == RecordingStatus.recording;
+  bool get canRecord => status == RecordingStatus.idle;
 
   RecordingState copyWith({
     RecordingStatus? status,
-    PitchResult?    latest,
-    String?         errorMessage,
-    bool            clearError = false,
+    PitchResult? latest,
+    String? errorMessage,
+    bool clearError = false,
   }) {
     return RecordingState(
-      status:       status       ?? this.status,
-      latest:       latest       ?? this.latest,
-      errorMessage: clearError   ? null
-                                 : (errorMessage ?? this.errorMessage),
+      status: status ?? this.status,
+      latest: latest ?? this.latest,
+      errorMessage: clearError ? null : (errorMessage ?? this.errorMessage),
     );
   }
 

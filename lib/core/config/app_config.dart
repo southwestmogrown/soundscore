@@ -27,6 +27,10 @@ class AppConfig {
     return _instance!;
   }
 
+  /// Whether [instance] has been set. Used in error handlers that run before
+  /// [AppConfig.setInstance] is called.
+  static bool get hasInstance => _instance != null;
+
   static void setInstance(AppConfig config) => _instance = config;
 
   bool get isDev => flavor == Flavor.dev;
@@ -53,8 +57,8 @@ class AppConfig {
     appName: 'SoundScore Staging',
     revenueCatApiKeyAndroid: 'PLACEHOLDER_REVENUECAT_ANDROID_STAGING',
     revenueCatApiKeyIos: 'PLACEHOLDER_REVENUECAT_IOS_STAGING',
-    admobAppIdAndroid: _testAdmobAppIdAndroid,
-    admobAppIdIos: _testAdmobAppIdIos,
+    admobAppIdAndroid: 'PLACEHOLDER_ADMOB_APP_ID_STAGING',
+    admobAppIdIos: 'PLACEHOLDER_ADMOB_APP_ID_STAGING',
     enableAnalytics: true,
     enableCrashlytics: true,
   );

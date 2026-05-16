@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:path/path.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:sqflite/sqflite.dart';
@@ -11,17 +13,22 @@ class SessionRepository {
   static const _dbVersion = 1;
 
   Database? _db;
+  Completer<Database>? _dbCompleter;
 
   /// Open (or create) the database. Safe to call multiple times.
   Future<Database> get database async {
     if (_db != null) return _db!;
+    _dbCompleter ??= Completer<Database>();
+    if (_dbCompleter!.isCompleted) return _db!;  // already succeeded
     final dir = await getApplicationDocumentsDirectory();
     final path = join(dir.path, _dbName);
     _db = await openDatabase(
       path,
       version: _dbVersion,
       onCreate: _onCreate,
+      onUpgrade: _onUpgrade,
     );
+    _dbCompleter!.complete(_db!);
     return _db!;
   }
 
@@ -35,6 +42,10 @@ class SessionRepository {
         created_at  TEXT    NOT NULL
       )
     ''');
+  }
+
+  Future<void> _onUpgrade(Database db, int oldVersion, int newVersion) async {
+    // Future migrations go here
   }
 
   /// Save a new session and return it with its generated [id].
@@ -56,10 +67,13 @@ class SessionRepository {
     );
   }
 
-  /// Delete a session by [id].
+  /// Delete a session by [id]. Throws if the session does not exist.
   Future<void> delete(int id) async {
     final db = await database;
-    await db.delete(_tableName, where: 'id = ?', whereArgs: [id]);
+    final count = await db.delete(_tableName, where: 'id = ?', whereArgs: [id]);
+    if (count == 0) {
+      throw StateError('Session $id not found');
+    }
   }
 
   /// Return all saved sessions, most recent first.

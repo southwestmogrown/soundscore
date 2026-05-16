@@ -69,19 +69,30 @@ void _dspIsolateMain(SendPort mainSendPort) {
       ? DynamicLibrary.open('libsoundscore_dsp.so')
       : DynamicLibrary.process(); // iOS: linked statically
 
-  final create  = lib.lookupFunction<_CreateNative,  _CreateDart>('soundscore_create');
-  final destroy = lib.lookupFunction<_DestroyNative, _DestroyDart>('soundscore_destroy');
-  final process = lib.lookupFunction<_ProcessNative, _ProcessDart>('soundscore_process_frame');
-  final getBpm  = lib.lookupFunction<_GetBpmNative,  _GetBpmDart>('soundscore_get_bpm');
-  final getChord = lib.lookupFunction<_GetChordNative, _GetChordDart>('soundscore_get_chord');
-  final getChordConfidence = lib.lookupFunction<_GetChordConfidenceNative, _GetChordConfidenceDart>('soundscore_get_chord_confidence');
-  final reset   = lib.lookupFunction<_ResetNative,   _ResetDart>('soundscore_reset');
+  late final _CreateDart create;
+  late final _DestroyDart destroy;
+  late final _ProcessDart process;
+  late final _GetBpmDart getBpm;
+  late final _GetChordDart getChord;
+  late final _GetChordConfidenceDart getChordConfidence;
+  late final _ResetDart reset;
+  try {
+    create  = lib.lookupFunction<_CreateNative,  _CreateDart>('soundscore_create');
+    destroy = lib.lookupFunction<_DestroyNative, _DestroyDart>('soundscore_destroy');
+    process = lib.lookupFunction<_ProcessNative, _ProcessDart>('soundscore_process_frame');
+    getBpm  = lib.lookupFunction<_GetBpmNative,  _GetBpmDart>('soundscore_get_bpm');
+    getChord = lib.lookupFunction<_GetChordNative, _GetChordDart>('soundscore_get_chord');
+    getChordConfidence = lib.lookupFunction<_GetChordConfidenceNative, _GetChordConfidenceDart>('soundscore_get_chord_confidence');
+    reset   = lib.lookupFunction<_ResetNative,   _ResetDart>('soundscore_reset');
+  } catch (e) {
+    throw StateError('Failed to load soundscore_dsp symbols: $e');
+  }
 
   const sampleRate = 44100;
   const frameSize  = 2048;
 
   final ctx = create(sampleRate, frameSize);
-  assert(ctx != nullptr, 'soundscore_create() returned null');
+  if (ctx == nullptr) throw StateError('soundscore_create() returned null');
 
   // Allocate a reusable native buffer for PCM data (avoids per-frame alloc)
   final nativeSamples = calloc<Int16>(frameSize);
@@ -100,6 +111,12 @@ void _dspIsolateMain(SendPort mainSendPort) {
       calloc.free(nativeSamples);
       calloc.free(chordBuf);
       receivePort.close();
+      return;
+    }
+
+    // Log and ignore unknown message types
+    if (message is! Int16List && message != 'reset' && message != 'dispose') {
+      // Unknown message — ignore silently in production
       return;
     }
 
@@ -159,32 +176,44 @@ class DspFfiBridge {
 
     _receivePort = ReceivePort();
 
-    // Spawn the DSP isolate
-    _isolate = await Isolate.spawn(
-      _dspIsolateMain,
-      _receivePort!.sendPort,
-      debugName: 'SoundScore-DSP',
-    );
+    try {
+      // Spawn the DSP isolate
+      _isolate = await Isolate.spawn(
+        _dspIsolateMain,
+        _receivePort!.sendPort,
+        debugName: 'SoundScore-DSP',
+      );
 
-    // First message back is the isolate's own SendPort
-    final completer = Completer<SendPort>();
-    late StreamSubscription sub;
-    sub = _receivePort!.listen((message) {
-      if (!completer.isCompleted && message is SendPort) {
-        completer.complete(message);
-        sub.cancel();
-      }
-    });
-    _dspSendPort = await completer.future;
+      // First message back is the isolate's own SendPort
+      final completer = Completer<SendPort>();
+      late StreamSubscription sub;
+      sub = _receivePort!.listen((message) {
+        if (!completer.isCompleted && message is SendPort) {
+          completer.complete(message);
+          sub.cancel();
+        }
+      });
+      _dspSendPort = await completer.future.timeout(
+        const Duration(seconds: 10),
+        onTimeout: () => throw StateError('DSP isolate handshake timed out'),
+      );
 
-    // All subsequent messages are List<dynamic> result payloads
-    _receivePort!.listen((message) {
-      if (message is List<dynamic> && !_controller.isClosed) {
-        _controller.add(PitchResult.fromIsolateMessage(message));
-      }
-    });
+      // All subsequent messages are List<dynamic> result payloads
+      _receivePort!.listen((message) {
+        if (message is List<dynamic> && !_controller.isClosed) {
+          _controller.add(PitchResult.fromIsolateMessage(message));
+        }
+      });
 
-    _initialized = true;
+      _initialized = true;
+    } catch (e) {
+      // Clean up resources on failure
+      _isolate?.kill(priority: Isolate.immediate);
+      _receivePort?.close();
+      _receivePort = null;
+      _isolate = null;
+      rethrow;
+    }
   }
 
   /// Send one frame of 16-bit PCM audio (mono, 44100 Hz) for processing.

@@ -76,3 +76,8 @@ native/build/
 *.so
 *.dylib
 *.a
+
+.claude/
+Get
+Process
+Run

@@ -5,42 +5,42 @@ void main() {
   group('Note', () {
     group('name and octave', () {
       test('A4 → name "A", octave 4', () {
-        final n = Note(69);
+        const n = Note(69);
         expect(n.name,     'A');
         expect(n.octave,   4);
         expect(n.fullName, 'A4');
       });
 
       test('Middle C (C4) → MIDI 60', () {
-        final n = Note(60);
+        const n = Note(60);
         expect(n.name,     'C');
         expect(n.octave,   4);
         expect(n.fullName, 'C4');
       });
 
       test('E2 (guitar low string) → MIDI 40', () {
-        final n = Note(40);
+        const n = Note(40);
         expect(n.name,     'E');
         expect(n.octave,   2);
         expect(n.fullName, 'E2');
       });
 
       test('E1 (bass low string) → MIDI 28', () {
-        final n = Note(28);
+        const n = Note(28);
         expect(n.name,     'E');
         expect(n.octave,   1);
         expect(n.fullName, 'E1');
       });
 
       test('G#3 → MIDI 56', () {
-        final n = Note(56);
+        const n = Note(56);
         expect(n.name,     'G#');
         expect(n.octave,   3);
         expect(n.fullName, 'G#3');
       });
 
       test('MIDI 0 → C-1', () {
-        final n = Note(0);
+        const n = Note(0);
         expect(n.name,     'C');
         expect(n.octave,   -1);
         expect(n.fullName, 'C-1');
@@ -49,19 +49,19 @@ void main() {
 
     group('frequency', () {
       test('A4 = 440 Hz', () {
-        expect(Note(69).frequency, closeTo(440.0, 0.01));
+        expect(const Note(69).frequency, closeTo(440.0, 0.01));
       });
 
       test('A3 = 220 Hz (one octave below A4)', () {
-        expect(Note(57).frequency, closeTo(220.0, 0.01));
+        expect(const Note(57).frequency, closeTo(220.0, 0.01));
       });
 
       test('E2 ≈ 82.41 Hz', () {
-        expect(Note(40).frequency, closeTo(82.41, 0.1));
+        expect(const Note(40).frequency, closeTo(82.41, 0.1));
       });
 
       test('E1 ≈ 41.20 Hz', () {
-        expect(Note(28).frequency, closeTo(41.20, 0.1));
+        expect(const Note(28).frequency, closeTo(41.20, 0.1));
       });
     });
 
@@ -92,11 +92,11 @@ void main() {
 
     group('equality', () {
       test('same MIDI note → equal', () {
-        expect(Note(69), equals(Note(69)));
+        expect(const Note(69), equals(const Note(69)));
       });
 
       test('different MIDI notes → not equal', () {
-        expect(Note(69), isNot(equals(Note(70))));
+        expect(const Note(69), isNot(equals(const Note(70))));
       });
     });
   });
